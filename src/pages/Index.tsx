@@ -1,45 +1,12 @@
+import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Navbar } from '@/components/layout/Navbar';
 import { Footer } from '@/components/layout/Footer';
 import { HallCard } from '@/components/halls/HallCard';
-import { Calendar, Shield, Clock, Star, ArrowRight, CheckCircle } from 'lucide-react';
+import { Calendar, Shield, Clock, Star, ArrowRight, CheckCircle, Loader2 } from 'lucide-react';
 import heroImage from '@/assets/hero-hall.jpg';
-import { Hall } from '@/lib/api';
-
-// Mock featured halls for demonstration
-const featuredHalls: Hall[] = [
-  {
-    id: 1,
-    name: 'Grand Ballroom',
-    description: 'An exquisite ballroom featuring crystal chandeliers and elegant décor, perfect for weddings and gala events.',
-    capacity: 500,
-    price_per_hour: 15000,
-    price_per_day: 100000,
-    location: 'Mumbai Central',
-    images: [{ id: 1, hall_id: 1, image_url: heroImage }],
-  },
-  {
-    id: 2,
-    name: 'Royal Garden Hall',
-    description: 'A stunning outdoor venue with manicured gardens and a climate-controlled pavilion for year-round events.',
-    capacity: 300,
-    price_per_hour: 10000,
-    price_per_day: 75000,
-    location: 'Bandra West',
-    images: [{ id: 2, hall_id: 2, image_url: heroImage }],
-  },
-  {
-    id: 3,
-    name: 'Executive Conference Center',
-    description: 'State-of-the-art conference facilities with modern AV equipment, ideal for corporate events and seminars.',
-    capacity: 150,
-    price_per_hour: 5000,
-    price_per_day: 35000,
-    location: 'Lower Parel',
-    images: [{ id: 3, hall_id: 3, image_url: heroImage }],
-  },
-];
+import { Hall, hallsApi } from '@/lib/api';
 
 const features = [
   {
@@ -72,6 +39,23 @@ const stats = [
 ];
 
 export default function Index() {
+  const [featuredHalls, setFeaturedHalls] = useState<Hall[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    const loadFeaturedHalls = async () => {
+      try {
+        const halls = await hallsApi.getAll();
+        setFeaturedHalls(halls.slice(0, 3)); // Show first 3 as featured
+      } catch (error) {
+        console.error('Failed to load halls:', error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    loadFeaturedHalls();
+  }, []);
+
   return (
     <div className="min-h-screen">
       <Navbar />
@@ -200,9 +184,20 @@ export default function Index() {
           </div>
 
           <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
-            {featuredHalls.map((hall) => (
-              <HallCard key={hall.id} hall={hall} />
-            ))}
+            {isLoading ? (
+              [1, 2, 3].map((i) => (
+                <div key={i} className="h-96 bg-muted rounded-xl animate-pulse" />
+              ))
+            ) : featuredHalls.length > 0 ? (
+              featuredHalls.map((hall) => (
+                <HallCard key={hall.id} hall={hall} />
+              ))
+            ) : (
+              <div className="col-span-3 text-center py-12">
+                <Loader2 className="w-8 h-8 animate-spin text-gold mx-auto mb-4" />
+                <p className="text-muted-foreground">No venues available yet</p>
+              </div>
+            )}
           </div>
         </div>
       </section>
