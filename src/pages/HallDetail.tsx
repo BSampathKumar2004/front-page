@@ -15,30 +15,6 @@ import {
 import { Hall, hallsApi, amenitiesApi, bookingsApi, Amenity, TimeSlot } from '@/lib/api';
 import heroImage from '@/assets/hero-hall.jpg';
 
-// Mock hall for demonstration
-const mockHall: Hall = {
-  id: 1,
-  name: 'Grand Ballroom',
-  description: 'An exquisite ballroom featuring crystal chandeliers, marble floors, and elegant décor. Perfect for weddings, gala events, corporate functions, and celebrations. Our dedicated event coordinators ensure every detail is handled with care.',
-  capacity: 500,
-  price_per_hour: 15000,
-  price_per_day: 100000,
-  location: 'Mumbai Central',
-  images: [
-    { id: 1, hall_id: 1, image_url: heroImage },
-    { id: 2, hall_id: 1, image_url: heroImage },
-    { id: 3, hall_id: 1, image_url: heroImage },
-  ],
-};
-
-const mockAmenities: Amenity[] = [
-  { id: 1, name: 'WiFi', icon: 'wifi' },
-  { id: 2, name: 'Parking', icon: 'car' },
-  { id: 3, name: 'Sound System', icon: 'music' },
-  { id: 4, name: 'Catering', icon: 'utensils' },
-  { id: 5, name: 'Air Conditioning', icon: 'air-vent' },
-];
-
 const amenityIcons: Record<string, typeof Wifi> = {
   wifi: Wifi,
   car: Car,
@@ -47,13 +23,6 @@ const amenityIcons: Record<string, typeof Wifi> = {
   'air-vent': AirVent,
 };
 
-const mockSlots: TimeSlot[] = [
-  { start_time: '09:00', end_time: '12:00', available: true },
-  { start_time: '12:00', end_time: '15:00', available: false },
-  { start_time: '15:00', end_time: '18:00', available: true },
-  { start_time: '18:00', end_time: '21:00', available: true },
-];
-
 export default function HallDetail() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
@@ -61,6 +30,7 @@ export default function HallDetail() {
   const { toast } = useToast();
 
   const [hall, setHall] = useState<Hall | null>(null);
+  const [error, setError] = useState<string | null>(null);
   const [amenities, setAmenities] = useState<Amenity[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
@@ -87,10 +57,10 @@ export default function HallDetail() {
       ]);
       setHall(hallData);
       setAmenities(amenitiesData);
-    } catch (error) {
-      // Use mock data if API fails
-      setHall(mockHall);
-      setAmenities(mockAmenities);
+      setError(null);
+    } catch (err) {
+      setError('Failed to load venue details');
+      console.error('Failed to load hall:', err);
     } finally {
       setIsLoading(false);
     }
@@ -103,9 +73,9 @@ export default function HallDetail() {
       const dateStr = selectedDate.toISOString().split('T')[0];
       const slots = await bookingsApi.getAvailableSlots(hall.id, dateStr);
       setAvailableSlots(slots);
-    } catch (error) {
-      // Use mock slots if API fails
-      setAvailableSlots(mockSlots);
+    } catch (err) {
+      console.error('Failed to load slots:', err);
+      setAvailableSlots([]);
     }
   };
 
@@ -173,10 +143,15 @@ export default function HallDetail() {
     );
   }
 
-  if (!hall) {
+  if (error || !hall) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <p>Hall not found</p>
+      <div className="min-h-screen bg-background">
+        <Navbar />
+        <div className="pt-24 flex flex-col items-center justify-center min-h-[60vh]">
+          <p className="text-destructive mb-4">{error || 'Hall not found'}</p>
+          <Button onClick={() => navigate('/halls')}>Back to Venues</Button>
+        </div>
+        <Footer />
       </div>
     );
   }
@@ -272,10 +247,11 @@ export default function HallDetail() {
               </div>
 
               {/* Amenities */}
+              {amenities.length > 0 && (
               <div>
                 <h2 className="text-xl font-display font-semibold mb-4">Amenities</h2>
                 <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-                  {(amenities.length ? amenities : mockAmenities).map((amenity) => {
+                  {amenities.map((amenity) => {
                     const IconComponent = amenityIcons[amenity.icon || 'wifi'] || Check;
                     return (
                       <div
@@ -291,6 +267,7 @@ export default function HallDetail() {
                   })}
                 </div>
               </div>
+              )}
             </div>
 
             {/* Right Column - Booking */}

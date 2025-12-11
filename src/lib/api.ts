@@ -1,5 +1,5 @@
 // API Configuration for Hall Booking System
-const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000';
+const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://10.70.9.131:8000';
 
 // Types
 export interface User {
